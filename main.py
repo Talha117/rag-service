@@ -352,6 +352,7 @@ async def query_chat_gpt(
        
         formatted_context = "\n\n".join(doc for doc in retrieved_docs['documents'][0])
         formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
+        print("\n\n", f"{formatted_prompt}","\n\n\n\n")
 
         res = generate_chat_gpt(prompt=formatted_prompt, temperature=query.temperature)
         return {
@@ -378,7 +379,7 @@ async def query_llm(
         # loading mask source (JSON)
         structure = await structure.read()
         structure = json.loads(structure)
-        prompt = structure["prompt"]
+        prompt = query.prompt
 
         ef = get_embedding_function(query.embed_method)
         collection_name = f"{query.collection}"

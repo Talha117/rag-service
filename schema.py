@@ -54,7 +54,7 @@ class QueryGPT(BaseModel):
 class QueryLLM(BaseModel):
     #vectordb_name: str
     collection: str
-    #prompt: str
+    prompt: str
     context: str
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
