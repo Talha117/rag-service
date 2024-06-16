@@ -7,7 +7,7 @@ import uvicorn
 import os
 
 from schema import IngestRequest, QueryModel, QueryLLM, QueryGPT, VectordDB
-from utils import masking, unmasking, ingestion_pipeline, generate_chat_gpt, generate_llm
+from utils import masking, unmasking, ingestion_pipeline, generate_chat_gpt, generate_llm, get_embedding_function
 from langchain_community.document_loaders import PyMuPDFLoader, TextLoader, JSONLoader
 import chromadb
 from chromadb import DEFAULT_TENANT
@@ -338,8 +338,12 @@ async def query_chat_gpt(
 ):
     
     try:
+        ef = get_embedding_function(query.embed_method)
         collection_name = f"{query.collection}"
-        collection = client.get_collection(collection_name)
+        collection = client.get_collection(
+            name=collection_name,
+            embedding_function=ef
+            )
         
         retrieved_docs = collection.query(
             query_texts = query.context,
@@ -376,8 +380,12 @@ async def query_llm(
         structure = json.loads(structure)
         prompt = structure["prompt"]
 
+        ef = get_embedding_function(query.embed_method)
         collection_name = f"{query.collection}"
-        collection = client.get_collection(collection_name)
+        collection = client.get_collection(
+            name=collection_name,
+            embedding_function=ef
+            )
         
         retrieved_docs = collection.query(
             query_texts = query.context,
@@ -388,7 +396,7 @@ async def query_llm(
         formatted_prompt = f"Question: {prompt}\n\nRetrieved Context: {formatted_context}"
 
         structure['prompt'] = formatted_prompt
-        print(structure['prompt'])
+        #print(structure['prompt'])
         res = generate_llm(structure=structure)
         response = res.json()
         retrieved_docs = {"retrieved_results": [doc for doc in retrieved_docs['documents'][0]]}

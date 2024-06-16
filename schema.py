@@ -49,6 +49,7 @@ class QueryGPT(BaseModel):
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     temperature: float
+    embed_method: EmbedMethod
 
 class QueryLLM(BaseModel):
     #vectordb_name: str
@@ -58,5 +59,6 @@ class QueryLLM(BaseModel):
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     #temperature: float
+    embed_method: EmbedMethod
 
 ############################################################

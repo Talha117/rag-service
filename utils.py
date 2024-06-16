@@ -75,7 +75,7 @@ def get_embedding_function(embed_method: str):
         )
     elif embed_method=="OpenAIEmbedding":
         ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key="YOUR_API_KEY",
+            api_key=OPENAI_API_KEY,
             model_name="text-embedding-3-small"
         )
     elif embed_method=="CustomEmbedding":
