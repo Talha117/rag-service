@@ -342,12 +342,12 @@ async def query_chat_gpt(
         collection = client.get_collection(collection_name)
         
         retrieved_docs = collection.query(
-            query_texts = query.prompt,
+            query_texts = query.context,
             n_results = query.n_results
         )
        
         formatted_context = "\n\n".join(doc for doc in retrieved_docs['documents'][0])
-        formatted_prompt = f"Question: {query.prompt}\n\nProvided Context: {query.context}\n\nRetrieved Context: {formatted_context}"
+        formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
 
         res = generate_chat_gpt(prompt=formatted_prompt, temperature=query.temperature)
         return {
@@ -380,19 +380,20 @@ async def query_llm(
         collection = client.get_collection(collection_name)
         
         retrieved_docs = collection.query(
-            query_texts = prompt,
+            query_texts = query.context,
             n_results = query.n_results
         )
        
         formatted_context = "\n\n".join(doc for doc in retrieved_docs['documents'][0])
-        formatted_prompt = f"Question: {prompt}\n\nProvided Context: {query.context}\n\nRetrieved Context: {formatted_context}"
+        formatted_prompt = f"Question: {prompt}\n\nRetrieved Context: {formatted_context}"
 
         structure['prompt'] = formatted_prompt
         print(structure['prompt'])
         res = generate_llm(structure=structure)
-        
-        return res.json() 
-    
+        response = res.json()
+        retrieved_docs = {"retrieved_results": [doc for doc in retrieved_docs['documents'][0]]}
+        #return res.json() 
+        return {**response, **retrieved_docs}
             # {
             # "prompt": prompt,
             # "response": response,

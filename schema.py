@@ -45,7 +45,7 @@ class QueryGPT(BaseModel):
     #vectordb_name: str
     collection: str
     prompt: str
-    context: Optional[str] = None
+    context:str
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     temperature: float
@@ -54,7 +54,7 @@ class QueryLLM(BaseModel):
     #vectordb_name: str
     collection: str
     #prompt: str
-    context: Optional[str] = None
+    context: str
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     #temperature: float
