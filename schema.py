@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any
 from enum import Enum
-
+from fastapi import Query
 
 
 ###########################################################
@@ -35,27 +35,28 @@ class IngestRequest(BaseModel):
 
 
 class QueryModel(BaseModel):
-    user_id: str
+    collection: str
     query: str
     n_results: int = 3
-
+    embed_method: EmbedMethod
 
 
 class QueryGPT(BaseModel):
     #vectordb_name: str
     collection: str
     prompt: str
-    context:str
+    context:List[str] = Field(Query([]))
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     temperature: float
     embed_method: EmbedMethod
+    
 
 class QueryLLM(BaseModel):
     #vectordb_name: str
     collection: str
     prompt: str
-    context: str
+    context: List[str] = Field(Query([]))
     n_results: int
     #structure: Optional[Dict[str, Any]] = None
     #temperature: float

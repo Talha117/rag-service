@@ -345,20 +345,29 @@ async def query_chat_gpt(
             embedding_function=ef
             )
         
-        retrieved_docs = collection.query(
-            query_texts = query.context,
-            n_results = query.n_results
-        )
-       
-        formatted_context = "\n\n".join(doc for doc in retrieved_docs['documents'][0])
+        
+        all_docs = []
+
+        for context in query.context:
+            retrieved_docs = collection.query(
+                query_texts = context,
+                n_results = query.n_results
+            )
+            # print("\n")
+            # print(context)
+            for doc in retrieved_docs['documents'][0]:
+                all_docs.append(doc)
+            #print(len(all_docs))
+        formatted_context = "\n\n".join(doc for doc in all_docs)
+        
         formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
-        print("\n\n", f"{formatted_prompt}","\n\n\n\n")
+        #print("\n\n", f"{formatted_prompt}","\n\n\n\n")
 
         res = generate_chat_gpt(prompt=formatted_prompt, temperature=query.temperature)
         return {
             "prompt": query.prompt,
             "response": res,
-            "retrieved_results": [doc for doc in retrieved_docs['documents'][0]]
+            "retrieved_results": all_docs
             }
    
     except Exception as e:
@@ -388,19 +397,26 @@ async def query_llm(
             embedding_function=ef
             )
         
-        retrieved_docs = collection.query(
-            query_texts = query.context,
-            n_results = query.n_results
-        )
-       
-        formatted_context = "\n\n".join(doc for doc in retrieved_docs['documents'][0])
+        all_docs = []
+
+        for context in query.context:
+            retrieved_docs = collection.query(
+                query_texts = context,
+                n_results = query.n_results
+            )
+           
+            for doc in retrieved_docs['documents'][0]:
+                all_docs.append(doc)
+        
+        formatted_context = "\n\n".join(doc for doc in all_docs)
+        
         formatted_prompt = f"Question: {prompt}\n\nRetrieved Context: {formatted_context}"
 
         structure['prompt'] = formatted_prompt
         #print(structure['prompt'])
         res = generate_llm(structure=structure)
         response = res.json()
-        retrieved_docs = {"retrieved_results": [doc for doc in retrieved_docs['documents'][0]]}
+        retrieved_docs = {"retrieved_results": all_docs}
         #return res.json() 
         return {**response, **retrieved_docs}
             # {
@@ -514,6 +530,29 @@ async def delete_vectordb(
         raise HTTPException(status_code=500, detail=str(e))    
 
 
+@app.post("/retrieval")
+def query(
+    query: QueryModel = Depends(),
+    client = Depends(get_chroma_client)
+):
+    
+    try:
+        ef = get_embedding_function(query.embed_method)
+        collection_name = f"{query.collection}"
+        collection = client.get_collection(
+            name=collection_name,
+            embedding_function=ef
+            )
+    
+        results = collection.query(
+            query_texts = query.query,
+            n_results = query.n_results
+        )
+        
+        return {"query": query.query, "results": results['documents'][0]}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # #######################################################################
 
@@ -562,29 +601,10 @@ async def delete_vectordb(
 #             logger.info(f"Temporary file {temp_file_path} removed")
 
 
-# @app.post("/query")
-# def query(
-#     query: QueryModel = Depends(),
-#     client = Depends(get_chroma_client)
-# ):
-    
-#     try:
-#         collection_name = f"{query.user_id}"
-#         collection = client.get_collection(collection_name)
-#         if collection:
-#             results = collection.query(
-#                 query_texts = query.query,
-#                 n_results = query.n_results
-#             )
-            
-#             return {"query": query.query, "results": results['documents'][0]}
-        
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
 # #######################################################################
 
 
 # Run the application
 if __name__ == "__main__":
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, log_config=f"./log.ini")
+    # uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
