@@ -1,4 +1,5 @@
 import requests
+from datetime import datetime, timezone
 import json
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter, TokenTextSplitter
 
@@ -61,6 +62,10 @@ def create_metadata(splits, filename):
     # updating source in metadata
     for metadata in metadatas:
         metadata['source'] = filename
+        # metadata['ingestionDate'] = datetime.now(timezone.utc).isoformat()
+        # metadata['ingestionDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        metadata['ingestionDate'] = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
+
 
     ids = [str(uuid4()) for _ in docs]   
 
@@ -109,7 +114,7 @@ def ingestion_pipeline(data, request, file, client):
 
     # unique collection for each user
     collection_name = f"{request.collection}"
-    collection = client.get_or_create_collection(name = collection_name, embedding_function = ef)
+    collection = client.get_or_create_collection(name = collection_name, embedding_function = ef, metadata={"hnsw:space": "cosine"})
     logger.info(f"Using collection: {collection_name}")
 
     # Ingestion

@@ -336,7 +336,9 @@ async def query_chat_gpt(
     query: QueryGPT = Depends(),
     client = Depends(get_chroma_client)
 ):
-    
+    if not len(query.context) == len(query.n_results):
+        logger.warning(f"contexts and n_results mismatch")
+        raise HTTPException(status_code=400, detail="No. of contexts and n_results should be same")
     try:
         ef = get_embedding_function(query.embed_method)
         collection_name = f"{query.collection}"
@@ -347,23 +349,35 @@ async def query_chat_gpt(
         
         
         all_docs = []
-
+        ingestion_dates = []
         for (context, n) in zip(query.context, query.n_results):
             retrieved_docs = collection.query(
                 query_texts = context,
                 n_results = n
             )
-            # print("\n")
-            #print(context)
-            for doc in retrieved_docs['documents'][0]:
-                all_docs.append(doc)
-            #print("length of all_docs: ",len(all_docs))
+            
+            all_docs.extend(retrieved_docs['documents'][0])
+            # for doc in retrieved_docs['documents'][0]:
+            #     all_docs.append(doc)
+          
+
+            for metadata in retrieved_docs['metadatas'][0]:
+                ingestion_dates.append(metadata['ingestionDate'])
+
+        #print(ingestion_dates)
+        formatted_context = ''
+        for i, (doc, timestamp) in enumerate(zip(all_docs, ingestion_dates)):
+            #print(i, timestamp)
+            formatted_context += f"Context {i+1}:\nTimestamp: {timestamp}\n\"{doc}\"\n\n\n"
+
+        # formatted_context = "\n\n".join(doc for doc in all_docs)        
+        # print(formatted_context)
+
+        # formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
         
-        #print("detail of all doc: ", all_docs)
-        formatted_context = "\n\n".join(doc for doc in all_docs)
-        
-        formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
-        #print("\n\n", f"{formatted_prompt}","\n\n\n\n")
+        formatted_prompt = f"Question: {query.prompt}\n\nEach context chunk includes a timestamp at the start. Always prioritize the chunk with the most recent timestamp.\n\nRetrieved Context:\n\n{formatted_context}"
+
+        print("\n\n", f"{formatted_prompt}","\n\n\n\n")
 
         res = generate_chat_gpt(prompt=formatted_prompt, temperature=query.temperature)
         return {
@@ -386,6 +400,11 @@ async def query_llm(
     if not structure.filename.endswith(".json"):
         logger.warning(f"Unsupported file format: {structure.filename}")
         raise HTTPException(status_code=400, detail="File format not supported")
+    
+    if not len(query.context) == len(query.n_results):
+        logger.warning(f"contexts and n_results mismatch")
+        raise HTTPException(status_code=400, detail="No. of contexts and n_results should be same")
+    
     try:
         # loading mask source (JSON)
         structure = await structure.read()
@@ -400,20 +419,34 @@ async def query_llm(
             )
         
         all_docs = []
-
+        ingestion_dates = []
         for (context, n) in zip(query.context, query.n_results):
             retrieved_docs = collection.query(
                 query_texts = context,
                 n_results = n
             )
            
-            for doc in retrieved_docs['documents'][0]:
-                all_docs.append(doc)
-            print("Context: ", context)
-            print("Length of all_docs: ", len(all_docs))
+            all_docs.extend(retrieved_docs['documents'][0])
+            # for doc in retrieved_docs['documents'][0]:
+            #     all_docs.append(doc)
+          
 
-        formatted_context = "\n\n".join(doc for doc in all_docs)
+            for metadata in retrieved_docs['metadatas'][0]:
+                ingestion_dates.append(metadata['ingestionDate'])
+
+
+        formatted_context = ''
+        for i, (doc, timestamp) in enumerate(zip(all_docs, ingestion_dates)):
+            formatted_context += f"Context {i+1}:\nTimestamp: {timestamp}\n\"{doc}\"\n\n\n"
+
+
+        # formatted_context = "\n\n".join(doc for doc in all_docs)
         
+        formatted_prompt = f"Question: {query.prompt}\n\nEach context chunk includes a timestamp at the start. Always prioritize the chunk with the most recent timestamp. \n\nRetrieved Context: \n\n{formatted_context}"
+
+        print("\n\n", f"{formatted_prompt}","\n\n\n\n")
+
+
         formatted_prompt = f"Question: {prompt}\n\nRetrieved Context: {formatted_context}"
 
         structure['prompt'] = formatted_prompt
