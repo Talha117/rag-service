@@ -348,16 +348,18 @@ async def query_chat_gpt(
         
         all_docs = []
 
-        for context in query.context:
+        for (context, n) in zip(query.context, query.n_results):
             retrieved_docs = collection.query(
                 query_texts = context,
-                n_results = query.n_results
+                n_results = n
             )
             # print("\n")
-            # print(context)
+            #print(context)
             for doc in retrieved_docs['documents'][0]:
                 all_docs.append(doc)
-            #print(len(all_docs))
+            #print("length of all_docs: ",len(all_docs))
+        
+        #print("detail of all doc: ", all_docs)
         formatted_context = "\n\n".join(doc for doc in all_docs)
         
         formatted_prompt = f"Question: {query.prompt}\n\nRetrieved Context: {formatted_context}"
@@ -399,15 +401,17 @@ async def query_llm(
         
         all_docs = []
 
-        for context in query.context:
+        for (context, n) in zip(query.context, query.n_results):
             retrieved_docs = collection.query(
                 query_texts = context,
-                n_results = query.n_results
+                n_results = n
             )
            
             for doc in retrieved_docs['documents'][0]:
                 all_docs.append(doc)
-        
+            print("Context: ", context)
+            print("Length of all_docs: ", len(all_docs))
+
         formatted_context = "\n\n".join(doc for doc in all_docs)
         
         formatted_prompt = f"Question: {prompt}\n\nRetrieved Context: {formatted_context}"
@@ -606,5 +610,5 @@ def query(
 
 # Run the application
 if __name__ == "__main__":
-    uvicorn.run(app="main:app", host="0.0.0.0", port=8000, log_config=f"./log.ini")
-    # uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
+    # uvicorn.run(app="main:app", host="0.0.0.0", port=8000, log_config=f"./log.ini")
+    uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)

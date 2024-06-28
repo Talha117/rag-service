@@ -46,7 +46,7 @@ class QueryGPT(BaseModel):
     collection: str
     prompt: str
     context:List[str] = Field(Query([]))
-    n_results: int
+    n_results: List[int] = Field(Query([]))
     #structure: Optional[Dict[str, Any]] = None
     temperature: float
     embed_method: EmbedMethod
@@ -57,7 +57,7 @@ class QueryLLM(BaseModel):
     collection: str
     prompt: str
     context: List[str] = Field(Query([]))
-    n_results: int
+    n_results: List[int] = Field(Query([]))
     #structure: Optional[Dict[str, Any]] = None
     #temperature: float
     embed_method: EmbedMethod
